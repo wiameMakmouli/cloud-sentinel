@@ -59,13 +59,11 @@ async def scan_code(file: UploadFile = File(...)):
                 json_str = json_str[start_index:]
             
             report_json = json.loads(json_str)
-            
             summary = {
                 "passed": report_json.get("summary", {}).get("passed", 0),
                 "failed": report_json.get("summary", {}).get("failed", 0),
                 "results": []
             }
-            
             if "results" in report_json and "failed_checks" in report_json["results"]:
                 for check in report_json["results"]["failed_checks"]:
                     summary["results"].append({
@@ -74,7 +72,6 @@ async def scan_code(file: UploadFile = File(...)):
                         "resource": check["resource"],
                         "guide": check["guideline"]
                     })
-            
             final_output = summary
             status = "Success"
         except:
@@ -86,13 +83,16 @@ async def scan_code(file: UploadFile = File(...)):
         final_output = {"error": str(e)}
         status = "Error"
 
-    table.put_item(Item={
-        'scan_id': scan_id,
-        'date': str(datetime.now()),
-        'type': 'SAST (Code)',
-        'status': status,
-        'details': str(final_output)[:300] + "..."
-    })
+    try:
+        table.put_item(Item={
+            'scan_id': scan_id,
+            'date': str(datetime.now()),
+            'type': 'SAST (Code)',
+            'status': status,
+            'details': str(final_output)[:300] + "..."
+        })
+    except Exception as e:
+        print(f"Erreur DB: {e}")
 
     if os.path.exists(file_path):
         os.remove(file_path)
@@ -102,7 +102,6 @@ async def scan_code(file: UploadFile = File(...)):
 @app.post("/scan-cloud")
 async def scan_cloud():
     scan_id = str(uuid.uuid4())
-    
     try:
         cmd = ["prowler", "aws", "--services", "iam", "--ignore-exit-code-3"]
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -112,12 +111,15 @@ async def scan_cloud():
         clean_text = str(e)
         status = "Error"
 
-    table.put_item(Item={
-        'scan_id': scan_id,
-        'date': str(datetime.now()),
-        'type': 'CSPM (Cloud)',
-        'status': status,
-        'details': clean_text[:300] + "..."
-    })
+    try:
+        table.put_item(Item={
+            'scan_id': scan_id,
+            'date': str(datetime.now()),
+            'type': 'CSPM (Cloud)',
+            'status': status,
+            'details': clean_text[:300] + "..."
+        })
+    except Exception as e:
+         print(f"Erreur DB: {e}")
 
     return {"scan_id": scan_id, "output": clean_text}
