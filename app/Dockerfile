@@ -1,26 +1,19 @@
-
-FROM python:3.9-slim
-
+FROM python:3.9
 
 WORKDIR /app
-# 1. Installation des outils système
-RUN apt-get update && \
-    apt-get install -y git curl unzip && \
-    pip install --no-cache-dir pipx && \
-    rm -rf /var/lib/apt/lists/*
 
-ENV PATH="/root/.local/bin:${PATH}"
+# Mise à jour de pip
+RUN pip install --upgrade pip
 
-# 2. Installation des Scanners (Checkov & Prowler)
-RUN pipx install checkov
-RUN pipx install prowler
+# Installation de Checkov et Prowler (Prendre un café, ça peut être long)
+RUN pip install --no-cache-dir checkov prowler
 
-# 3. Installation des dépendances Python (boto3, fastapi...)
+# Installation des dépendances App
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 4. Copie du code
+# Copie du code
 COPY main.py .
 
-# 5. Lancement
+# Lancement
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]

@@ -49,8 +49,9 @@ async def scan_code(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, buffer)
 
     try:
-        cmd = ["checkov", "-f", file_path, "--output", "json"]
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        # CORRECTION ICI : Appel via python -m pour éviter les erreurs de chemin
+        cmd = ["python", "-m", "checkov", "-f", file_path, "--output", "json"]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         
         try:
             json_str = result.stdout
@@ -103,8 +104,9 @@ async def scan_code(file: UploadFile = File(...)):
 async def scan_cloud():
     scan_id = str(uuid.uuid4())
     try:
-        cmd = ["prowler", "aws", "--services", "iam", "--ignore-exit-code-3"]
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        # CORRECTION ICI : Appel via python -m
+        cmd = ["python", "-m", "prowler", "aws", "--services", "iam", "--ignore-exit-code-3"]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         clean_text = clean_ansi_codes(result.stdout)
         status = "Success"
     except Exception as e:
